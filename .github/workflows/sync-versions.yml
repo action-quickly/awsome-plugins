@@ -16,7 +16,7 @@ jobs:
         run: |
           jq -c '.[]' index.json | while IFS= read -r row; do
             id=$(echo "$row" | jq -r '.id')
-            repo=$(echo "$row" | jq -r '.repo' | sed 's|https://github.com/||')
+            repo=$(echo "$row" | jq -r '.repo' | sed 's|https://github.com/||; s|^/||')
             old=$(echo "$row" | jq -r '.version')
 
             tag=$(gh release view -R "$repo" --json tagName --jq '.tagName' 2>/dev/null) || continue
