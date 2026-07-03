@@ -14,7 +14,7 @@ jobs:
 
       - name: Update versions
         run: |
-          for row in $(jq -c '.[]' index.json); do
+          jq -c '.[]' index.json | while IFS= read -r row; do
             id=$(echo "$row" | jq -r '.id')
             repo=$(echo "$row" | jq -r '.repo' | sed 's|https://github.com/||')
             old=$(echo "$row" | jq -r '.version')
