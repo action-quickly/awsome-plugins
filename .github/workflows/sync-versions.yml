@@ -1,7 +1,8 @@
 name: Sync Plugin Versions
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
 
 jobs:
   sync:
@@ -12,57 +13,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update versions from latest GitHub releases
+      - name: Update versions
         run: |
-          python3 << 'PYEOF'
-import json, subprocess, sys
+          for row in $(jq -c '.[]' index.json); do
+            id=$(echo "$row" | jq -r '.id')
+            repo=$(echo "$row" | jq -r '.repo' | sed 's|https://github.com/||')
+            old=$(echo "$row" | jq -r '.version')
 
-with open('index.json', encoding='utf-8') as f:
-    plugins = json.load(f)
+            tag=$(gh release view -R "$repo" --json tagName --jq '.tagName' 2>/dev/null) || continue
+            new="${tag#v}"
 
-updated = False
-for p in plugins:
-    owner_repo = p['repo'].replace('https://github.com/', '')
-    old_ver = p['version']
+            if [ "$new" != "$old" ]; then
+              echo "Updating $id: v$old -> v$new"
+              jq --arg id "$id" --arg ver "$new" --arg tag "v$new" \
+                '(.[] | select(.id == $id) | .version) |= $ver |
+                 (.[] | select(.id == $id) | .path) |= "releases/download/\($tag)/aq-\($id).zip"' \
+                index.json > tmp.json && mv tmp.json index.json
+            fi
+          done
 
-    result = subprocess.run(
-        ['gh', 'release', 'view', '-R', owner_repo, '--json', 'tagName', '--jq', '.tagName'],
-        capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        print(f'::warning::Failed to fetch release for {p["id"]}: {result.stderr.strip()}')
-        continue
-
-    new_ver = result.stdout.strip().lstrip('v')
-    if new_ver == old_ver:
-        print(f'{p["id"]}: already v{old_ver}, skip')
-        continue
-
-    print(f'{p["id"]}: v{old_ver} -> v{new_ver}')
-    p['version'] = new_ver
-    tag = 'v' + new_ver
-    p['path'] = f'releases/download/{tag}/aq-{p["id"]}.zip'
-    updated = True
-
-if not updated:
-    print('All plugins are up to date')
-    sys.exit(0)
-
-with open('index.json', 'w', encoding='utf-8') as f:
-    json.dump(plugins, f, ensure_ascii=False, indent=2)
-    f.write('\n')
-
-print('index.json updated')
-PYEOF
-
-      - name: Commit and push if changed
+      - name: Commit if changed
         run: |
-          if ! git diff --quiet; then
+          git diff --quiet && echo "No changes" || {
             git config user.name "github-actions"
             git config user.email "github-actions@github.com"
             git add index.json
             git commit -m "chore: sync plugin versions"
             git push
-          else
-            echo "No changes to commit"
-          fi
+          }
