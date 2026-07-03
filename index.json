@@ -6,7 +6,7 @@
     "author": "ActionQuick",
     "description": "格式化、压缩、校验 JSON",
     "repo": "https://github.com/action-quickly/aq-json-formatter",
-    "path": "releases/download/v1.0.0/json-formatter.zip",
+    "path": "releases/download/v1.0.0/aq-json-formatter.zip",
     "tags": ["开发", "JSON"]
   },
   {
@@ -16,7 +16,7 @@
     "author": "ActionQuick",
     "description": "多语言翻译，支持中英日韩",
     "repo": "https://github.com/action-quickly/aq-translator",
-    "path": "releases/download/v1.0.0/translator.zip",
+    "path": "releases/download/v1.0.0/aq-translator.zip",
     "tags": ["翻译", "工具"]
   },
   {
@@ -26,7 +26,7 @@
     "author": "ActionQuick",
     "description": "Base64 编码和解码",
     "repo": "https://github.com/action-quickly/aq-base64",
-    "path": "releases/download/v1.0.0/base64.zip",
+    "path": "releases/download/v1.0.0/aq-base64.zip",
     "tags": ["开发", "编码"]
   },
   {
@@ -36,7 +36,7 @@
     "author": "ActionQuick",
     "description": "屏幕取色，HEX/RGB/HSL 转换",
     "repo": "https://github.com/action-quickly/aq-color-picker",
-    "path": "releases/download/v1.0.0/color-picker.zip",
+    "path": "releases/download/v1.0.0/aq-color-picker.zip",
     "tags": ["设计", "颜色"]
   },
   {
@@ -46,7 +46,7 @@
     "author": "ActionQuick",
     "description": "Unix 时间戳与日期互转",
     "repo": "https://github.com/action-quickly/aq-timestamp",
-    "path": "releases/download/v1.0.0/timestamp.zip",
+    "path": "releases/download/v1.0.0/aq-timestamp.zip",
     "tags": ["开发", "时间"]
   }
 ]
