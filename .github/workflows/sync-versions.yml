@@ -1,0 +1,68 @@
+name: Sync Plugin Versions
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update versions from latest GitHub releases
+        run: |
+          python3 << 'PYEOF'
+import json, subprocess, sys
+
+with open('index.json', encoding='utf-8') as f:
+    plugins = json.load(f)
+
+updated = False
+for p in plugins:
+    owner_repo = p['repo'].replace('https://github.com/', '')
+    old_ver = p['version']
+
+    result = subprocess.run(
+        ['gh', 'release', 'view', '-R', owner_repo, '--json', 'tagName', '--jq', '.tagName'],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        print(f'::warning::Failed to fetch release for {p["id"]}: {result.stderr.strip()}')
+        continue
+
+    new_ver = result.stdout.strip().lstrip('v')
+    if new_ver == old_ver:
+        print(f'{p["id"]}: already v{old_ver}, skip')
+        continue
+
+    print(f'{p["id"]}: v{old_ver} -> v{new_ver}')
+    p['version'] = new_ver
+    tag = 'v' + new_ver
+    p['path'] = f'releases/download/{tag}/aq-{p["id"]}.zip'
+    updated = True
+
+if not updated:
+    print('All plugins are up to date')
+    sys.exit(0)
+
+with open('index.json', 'w', encoding='utf-8') as f:
+    json.dump(plugins, f, ensure_ascii=False, indent=2)
+    f.write('\n')
+
+print('index.json updated')
+PYEOF
+
+      - name: Commit and push if changed
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add index.json
+            git commit -m "chore: sync plugin versions"
+            git push
+          else
+            echo "No changes to commit"
+          fi
