@@ -17,6 +17,7 @@ jobs:
           ARGS=()
           while IFS='|' read -r id repo_url old; do
             repo="${repo_url#https://github.com/}"
+            repo="${repo#/}"
             tag=$(gh release view -R "$repo" --json tagName --jq '.tagName' 2>/dev/null) || { echo "::warning::$id: no release"; continue; }
             new="${tag#v}"
             [ "$new" = "$old" ] && echo "$id: v$old (current)" && continue
