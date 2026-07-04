@@ -1,6 +1,6 @@
 [
   {
-    "id": "json-formatter",
+    "id": "aq-json-formatter",
     "name": "JSON 格式化",
     "version": "1.0.0",
     "author": "ActionQuick",
@@ -10,7 +10,7 @@
     "tags": ["开发", "JSON"]
   },
   {
-    "id": "translator",
+    "id": "aq-translator",
     "name": "翻译",
     "version": "1.0.0",
     "author": "ActionQuick",
@@ -20,7 +20,7 @@
     "tags": ["翻译", "工具"]
   },
   {
-    "id": "base64",
+    "id": "aq-base64",
     "name": "Base64 编解码",
     "version": "1.0.0",
     "author": "ActionQuick",
@@ -30,7 +30,7 @@
     "tags": ["开发", "编码"]
   },
   {
-    "id": "color-picker",
+    "id": "aq-color-picker",
     "name": "颜色拾取器",
     "version": "1.0.0",
     "author": "ActionQuick",
@@ -40,7 +40,7 @@
     "tags": ["设计", "颜色"]
   },
   {
-    "id": "timestamp",
+    "id": "aq-timestamp",
     "name": "时间戳转换",
     "version": "2.0.0",
     "author": "ActionQuick",
