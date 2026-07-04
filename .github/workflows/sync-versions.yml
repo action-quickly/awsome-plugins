@@ -1,48 +1,37 @@
 name: Sync Plugin Versions
 
 on:
+  schedule:
+    # 每天 UTC 02:00 运行一次
+    - cron: "0 2 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-versions
+  cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update versions
-        run: |
-          ARGS=()
-          while IFS='|' read -r id repo_url old; do
-            repo="${repo_url#https://github.com/}"
-            repo="${repo#/}"
-            tag=$(gh release view -R "$repo" --json tagName --jq '.tagName' 2>/dev/null) || { echo "::warning::$id: no release"; continue; }
-            new="${tag#v}"
-            [ "$new" = "$old" ] && echo "$id: v$old (current)" && continue
-            echo "$id: v$old -> v$new"
-            ARGS+=(--arg "$id" "$new")
-          done < <(jq -r '.[] | [.id, .repo, .version] | join("|")' index.json)
-
-          [ ${#ARGS[@]} -eq 0 ] && echo "All up to date" && exit 0
-
-          jq "${ARGS[@]}" '
-            map(
-              if $ARGS.named[.id] then
-                .version = $ARGS.named[.id] |
-                .path = "releases/download/v\($ARGS.named[.id])/aq-\(.id).zip"
-              else .
-              end
-            )' index.json > tmp.json && mv tmp.json index.json
-          echo "index.json updated"
+      - name: Sync versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python .github/scripts/sync_versions.py index.json
 
       - name: Commit if changed
         run: |
-          git diff --quiet && echo "No changes" || {
-            git config user.name "github-actions"
-            git config user.email "github-actions@github.com"
-            git add index.json
-            git commit -m "chore: sync plugin versions"
-            git push
+          git diff --quiet -- index.json && {
+            echo "No changes"
+            exit 0
           }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.json
+          git commit -m "chore: sync plugin versions"
+          git push
