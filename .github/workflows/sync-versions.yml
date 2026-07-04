@@ -14,22 +14,27 @@ jobs:
 
       - name: Update versions
         run: |
-          jq -c '.[]' index.json | while IFS= read -r row; do
-            id=$(echo "$row" | jq -r '.id')
-            repo=$(echo "$row" | jq -r '.repo' | sed 's|https://github.com/||; s|^/||')
-            old=$(echo "$row" | jq -r '.version')
-
-            tag=$(gh release view -R "$repo" --json tagName --jq '.tagName' 2>/dev/null) || continue
+          ARGS=()
+          while IFS='|' read -r id repo_url old; do
+            repo="${repo_url#https://github.com/}"
+            tag=$(gh release view -R "$repo" --json tagName --jq '.tagName' 2>/dev/null) || { echo "::warning::$id: no release"; continue; }
             new="${tag#v}"
+            [ "$new" = "$old" ] && echo "$id: v$old (current)" && continue
+            echo "$id: v$old -> v$new"
+            ARGS+=(--arg "$id" "$new")
+          done < <(jq -r '.[] | [.id, .repo, .version] | join("|")' index.json)
 
-            if [ "$new" != "$old" ]; then
-              echo "Updating $id: v$old -> v$new"
-              jq --arg id "$id" --arg ver "$new" --arg tag "v$new" \
-                '(.[] | select(.id == $id) | .version) |= $ver |
-                 (.[] | select(.id == $id) | .path) |= "releases/download/\($tag)/aq-\($id).zip"' \
-                index.json > tmp.json && mv tmp.json index.json
-            fi
-          done
+          [ ${#ARGS[@]} -eq 0 ] && echo "All up to date" && exit 0
+
+          jq "${ARGS[@]}" '
+            map(
+              if $ARGS.named[.id] then
+                .version = $ARGS.named[.id] |
+                .path = "releases/download/v\($ARGS.named[.id])/aq-\(.id).zip"
+              else .
+              end
+            )' index.json > tmp.json && mv tmp.json index.json
+          echo "index.json updated"
 
       - name: Commit if changed
         run: |
